@@ -1,0 +1,64 @@
+name: Release addon
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: ${{ !github.event.deleted }}
+    runs-on: ubuntu-latest
+    env:
+      ADDON_FOLDER: CharacterPlannerExport
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Validate version and package addon
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          if ($tag -cnotmatch '\Av[0-9]+\.[0-9]+\.[0-9]+\z') {
+            throw "Expected a stable version tag such as v1.2.3, got '$tag'."
+          }
+
+          $addon = $env:ADDON_FOLDER
+          $manifest = "$addon/$addon.toc"
+          $nested = git ls-tree --name-only HEAD -- $manifest
+          if ($LASTEXITCODE -ne 0) { throw 'Could not inspect the tagged commit.' }
+          if ($nested) {
+            $packagePaths = @("$addon/")
+            $archiveOptions = @()
+          } else {
+            $manifest = "$addon.toc"
+            $packagePaths = @($manifest, 'CharacterPlannerExportDB.lua')
+            $archiveOptions = @("--prefix=$addon/")
+          }
+
+          $manifestLines = git show "HEAD:$manifest"
+          if ($LASTEXITCODE -ne 0) { throw "Could not read $manifest from the tagged commit." }
+          $versionLines = @($manifestLines | Where-Object { $_ -match '^## Version:' })
+          $expectedVersion = $tag.Substring(1)
+          if ($versionLines.Count -ne 1 -or ($versionLines[0] -replace '^## Version:', '').Trim() -cne $expectedVersion) {
+            throw "Expected exactly one Version field set to $expectedVersion in $manifest."
+          }
+
+          $zip = Join-Path $env:RUNNER_TEMP "$addon.zip"
+          git archive --format=zip "--output=$zip" @archiveOptions HEAD -- @packagePaths
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not package $addon."
+          }
+
+      - name: Publish GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $zip = Join-Path $env:RUNNER_TEMP "$env:ADDON_FOLDER.zip"
+          gh release create $env:GITHUB_REF_NAME $zip --repo $env:GITHUB_REPOSITORY --verify-tag --generate-notes
