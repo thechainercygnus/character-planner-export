@@ -1,0 +1,7 @@
+## Interface: 16001
+## Title: CharacterPlannerExport
+## Notes: Exports character details for the Character Planner Tool
+## Version: 0.1.0
+
+## SavedVariablesPerCharacter: CharacterPlannerExportDB
+CharacterPlannerExportDB.lua
