@@ -3,6 +3,9 @@
 CharacterPlannerExport saves WoW: Forever character, inventory, and quest data for
 the Character Planner Tool in the [version 1 format](SCHEMA.md).
 
+Part of [Character Planner](https://github.com/thechainercygnus/character-planner):
+the planner imports this file to see what the Battle.net API doesn't show.
+
 ## Install
 
 Copy the inner **CharacterPlannerExport** folder into the client's AddOns
@@ -25,3 +28,8 @@ under `_forever_\WTF\Account\<ACCOUNT>\91\` to the planner.
 
 The inner CharacterPlannerExport folder contains the TOC and Lua files
 installed in the game. Repository documentation lives at the root.
+
+## License
+
+[MIT](LICENSE). World of Warcraft names and game data belong to Blizzard
+Entertainment. This project isn't affiliated with or endorsed by Blizzard.
