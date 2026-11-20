@@ -1,0 +1,15 @@
+# Weekly version updates. Security updates and alerts are on in the repo settings.
+# Minor and patch updates come grouped in one PR; majors one PR each.
+version: 2
+
+updates:
+  # Actions in .github/workflows/, pinned to commit SHAs: Dependabot updates the SHA
+  # and the version comment together.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions-minor-and-patch:
+        update-types: [minor, patch]
