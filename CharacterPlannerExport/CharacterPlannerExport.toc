@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## Title: CharacterPlannerExport
 ## Notes: Exports character, inventory, and quest data for the Character Planner Tool
-## Version: 0.2.0
+## Version: 0.2.1
 
 ## SavedVariablesPerCharacter: CharacterPlannerExportDB
 CharacterPlannerExportDB.lua
