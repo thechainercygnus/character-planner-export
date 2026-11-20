@@ -1,0 +1,23 @@
+# Dependency Review: checks the dependencies a pull request adds or changes. Today
+# those are the GitHub Actions in .github/workflows/.
+#
+# Vulnerabilities: fail on known high or critical ones.
+fail-on-severity: high
+
+# Licenses: this project is MIT, so new dependencies must be under a permissive license
+# (or MPL-2.0, whose file-level copyleft doesn't reach this code). GPL-family licenses are
+# deliberately absent. A dependency whose license is unknown, as the actions are today,
+# is reported, not failed: check it by hand.
+allow-licenses:
+  - MIT
+  - MIT-0
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - 0BSD
+  - Zlib
+  - Unlicense
+  - CC0-1.0
+  - BlueOak-1.0.0
+  - MPL-2.0
