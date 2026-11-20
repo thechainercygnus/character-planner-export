@@ -1,6 +1,7 @@
 local ADDON = ...
 local regions = { US = true, EU = true, KR = true, TW = true }
 local bankOpen = false
+local pendingBagItem, pendingBankItem
 
 local function CollectCharacter()
     -- On Forever, UnitName's second return is the surname.
@@ -29,7 +30,12 @@ local function CollectItems(containers, isBank)
             if info then
                 if not info.itemID or info.itemID < 1 or not info.stackCount
                     or info.stackCount < 1 or not info.quality or info.quality < 0 then
-                    return -- Keep the previous snapshot while slot data is incomplete.
+                    -- Keep the previous snapshot and retry when this item loads.
+                    local itemID = info.itemID
+                    if not itemID or itemID < 1 then
+                        itemID = C_Container.GetContainerItemID(container, slot)
+                    end
+                    return nil, itemID
                 end
                 items[#items + 1] = {
                     container = container,
@@ -122,6 +128,18 @@ local function SaveSection(key, snapshot)
     )
 end
 
+local function SaveBags()
+    local snapshot
+    snapshot, pendingBagItem = CollectBags()
+    SaveSection("bags", snapshot)
+end
+
+local function SaveBank()
+    local snapshot
+    snapshot, pendingBankItem = CollectBank()
+    SaveSection("bank", snapshot)
+end
+
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -152,9 +170,9 @@ frame:SetScript("OnEvent", function(self, event, ...)
     local db = CharacterPlannerExportDB
     if event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_LOGOUT" then
         db.character = CollectCharacter() or db.character
-        SaveSection("bags", CollectBags())
+        SaveBags()
         SaveSection("quests", CollectQuests())
-        if bankOpen then SaveSection("bank", CollectBank()) end
+        if bankOpen then SaveBank() end
         -- A character-only export still needs a timestamp if both reads are pending.
         db.capturedAt = db.capturedAt or GetServerTime()
     elseif event == "PLAYER_LEVEL_UP" then
@@ -162,14 +180,20 @@ frame:SetScript("OnEvent", function(self, event, ...)
         if db.character then db.character.level = level end
     elseif event == "BANKFRAME_CLOSED" then
         bankOpen = false
+        pendingBankItem = nil
     elseif event == "BANKFRAME_OPENED" then
         bankOpen = true
-        SaveSection("bank", CollectBank())
-    elseif event == "BAG_UPDATE_DELAYED" or event == "ITEM_DATA_LOAD_RESULT" then
-        SaveSection("bags", CollectBags())
-        if bankOpen then SaveSection("bank", CollectBank()) end
+        SaveBank()
+    elseif event == "BAG_UPDATE_DELAYED" then
+        SaveBags()
+        if bankOpen then SaveBank() end
+    elseif event == "ITEM_DATA_LOAD_RESULT" then
+        local itemID, success = ...
+        if not success or not itemID then return end
+        if itemID == pendingBagItem then SaveBags() end
+        if bankOpen and itemID == pendingBankItem then SaveBank() end
     elseif event == "PLAYERBANKSLOTS_CHANGED" or event == "BANK_TABS_CHANGED" then
-        if bankOpen then SaveSection("bank", CollectBank()) end
+        if bankOpen then SaveBank() end
     elseif event == "QUEST_LOG_UPDATE" or event == "QUEST_TURNED_IN" or event == "QUEST_DATA_LOAD_RESULT" then
         SaveSection("quests", CollectQuests())
     end
